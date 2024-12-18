@@ -20,7 +20,7 @@ def get_plot_data():
     conn = sqlite3.connect('epl.db')
     
     # Query the database
-    df = pd.read_sql_query("SELECT Pos, GD FROM premier_league", conn)
+    df = pd.read_sql_query("SELECT Pos, GD, Pts, Team, Season FROM premier_league", conn)
     
     # Convert to list of dictionaries for JSON response
     data = df.to_dict('records')
