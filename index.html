@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EPL Position vs Goal Difference</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        .tooltip {
+            position: absolute;
+            padding: 8px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            pointer-events: none;
+            font-family: sans-serif;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="scatter-plot"></div>
+    <script>
+        // Set the dimensions and margins of the graph
+        const margin = {top: 40, right: 30, bottom: 50, left: 60};
+        const width = 800 - margin.left - margin.right;
+        const height = 500 - margin.top - margin.bottom;
+
+        // Create SVG container
+        const svg = d3.select("#scatter-plot")
+            .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create tooltip div
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        // Fetch data from our API
+        d3.json("http://localhost:8000/plot-data").then(function(response) {
+            const data = response.data;
+
+            // Create scales
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.Pos) + 1])
+                .range([0, width]);
+
+            const y = d3.scaleLinear()
+                .domain([d3.min(data, d => d.GD) - 5, d3.max(data, d => d.GD) + 5])
+                .range([height, 0]);
+
+            // Add X axis
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(20))
+                .selectAll("text")
+                .style("text-anchor", "middle");
+
+            // X axis label
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", width/2)
+                .attr("y", height + margin.bottom - 10)
+                .text("Position");
+
+            // Add Y axis
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            // Y axis label
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -height/2)
+                .text("Goal Difference");
+
+            // Add dots
+            svg.append('g')
+                .selectAll("dot")
+                .data(data)
+                .join("circle")
+                    .attr("cx", d => x(d.Pos))
+                    .attr("cy", d => y(d.GD))
+                    .attr("r", 5)
+                    .style("fill", "#69b3a2")
+                    .on("mouseover", function(event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        tooltip.html(`Position: ${d.Pos}<br/>Goal Difference: ${d.GD}`)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+        });
+    </script>
+</body>
+</html>
