@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import sqlite3
 import pandas as pd
 
@@ -8,24 +9,19 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins for now (you might want to restrict this in production)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/plot-data")
 def get_plot_data():
-    # Connect to SQLite database
     conn = sqlite3.connect('epl.db')
-    
-    # Query the database
-    df = pd.read_sql_query("SELECT Pos, GD, Pts, Team, Season FROM premier_league", conn)
-    
-    # Convert to list of dictionaries for JSON response
+    df = pd.read_sql_query("SELECT Season, Pos, Team, GD, Pts FROM premier_league", conn)
     data = df.to_dict('records')
-    
-    # Close connection
     conn.close()
-    
     return {"data": data}
